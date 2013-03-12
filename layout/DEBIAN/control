@@ -1,0 +1,9 @@
+Package: com.filippobiga.harlem
+Name: harlem
+Depends: mobilesubstrate, libactivator
+Version: 0.1
+Architecture: iphoneos-arm
+Description: SpringBoard Harlem Shake!
+Maintainer: FilippoBiga
+Author: FilippoBiga
+Section: Tweaks
