@@ -7,8 +7,8 @@
 //
 
 #import "VLMHarlemShake.h"
-
 #import <AVFoundation/AVFoundation.h>
+#import <objc/runtime.h>
 
 typedef enum {
     VLMShakeStyleOne = 0,
@@ -16,6 +16,7 @@ typedef enum {
     VLMShakeStyleThree,
     VLMShakeStyleEnd
 } VLMShakeStyle;
+
 
 @interface VLMHarlemShake () <AVAudioPlayerDelegate>
 
@@ -93,9 +94,10 @@ typedef enum {
     // shake the loner view.
     [self _shakeView:self.lonerView withShakeStyle:VLMShakeStyleThree randomSeed:(arc4random() / (CGFloat)RAND_MAX)];
     
-    double delayInSeconds = 15.5;
+    float delayInSeconds = 14.5;
     dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC));
     dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
+        
         [self _findViewsOfInterestWithCallback:^(UIView *viewOfInterest) {
             
             [self.shakingViews addObject:viewOfInterest];
@@ -123,7 +125,8 @@ typedef enum {
 {
     for (UIView *view in [rootView subviews]) {
         
-        if ([view isKindOfClass:[UILabel class]] ||
+        if ([view respondsToSelector:@selector(_iconImageView)] ||
+            [view isKindOfClass:[UILabel class]] ||
             [view isKindOfClass:[UIButton class]] ||
             [view isKindOfClass:[UIImageView class]] ||
             [view isKindOfClass:[UISwitch class]] ||
@@ -234,7 +237,7 @@ typedef enum {
         negative = 1;
     }
     
-    NSInteger offsetOne = (NSInteger)((10 + 20. * seed) * negative);
+    NSInteger offsetOne = (NSInteger)((10.0 + 20.0 * seed) * negative);
     NSInteger offsetTwo = -offsetOne;
     
     NSValue *startingOffset = [NSValue valueWithCGSize:CGSizeZero];

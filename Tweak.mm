@@ -2,25 +2,26 @@
 #import <libactivator/libactivator.h>
 #import "VLMHarlemShake.h"
 
-@interface SBIconController ()
--(SBIconListView *)currentRootIconList;
+// iOS 5+6 declarations
+@interface SBAwayView : UIView
+-(UIView *)dateHeaderView;
 @end
 
-@interface SBIconViewMap : NSObject
-+ (SBIconViewMap *)homescreenMap;
-- (UIView *)iconViewForIcon:(SBIcon *)icon;
+@interface SBAwayController : NSObject
++(SBAwayController *)sharedAwayController;
+-(SBAwayView *)awayView;
+-(void)restartDimTimer:(float)delay;
 @end
 
-@interface SBAwayView ()
-- (id)dateHeaderView;
-@end
 
 @interface FBSBHarlemShake : NSObject<LAListener>
 {
     BOOL _animating;
     VLMHarlemShake *_harlemShake;
 }
+
 @end
+
 
 @implementation FBSBHarlemShake
 
@@ -37,19 +38,36 @@
     if ([mode isEqualToString:@"springboard"])
     {
         SBIconListView *listView = [[%c(SBIconController) sharedInstance] currentRootIconList];
-        
         NSArray *icons = [listView icons];
+        
         SBIcon *icon = [icons objectAtIndex:(arc4random() % [icons count])];
         SBIconViewMap *map = [%c(SBIconViewMap) homescreenMap];
         lonerView = [map iconViewForIcon:icon];
         
     } else if ([mode isEqualToString:@"lockscreen"])
     {
-        SBAwayController *awayController = [%c(SBAwayController) sharedAwayController];
-        [awayController restartDimTimer:32.0f];
+        Class controllerClass = %c(SBAwayController);
         
-        SBAwayView *awayView = [awayController awayView];
-        lonerView = [awayView dateHeaderView];
+        if (controllerClass)
+        {
+            SBAwayController *awayController = [controllerClass sharedAwayController];
+            [awayController restartDimTimer:32.0f];
+            
+            SBAwayView *awayView = [awayController awayView];
+            lonerView = [awayView dateHeaderView];
+
+            
+        } else {
+            
+            [[%c(SBBacklightController) sharedInstance] resetLockScreenIdleTimerWithDuration:32.0f];
+            
+            SBLockScreenManager *manager = [%c(SBLockScreenManager) sharedInstance];
+            SBLockScreenViewController *viewController = (SBLockScreenViewController *)manager.lockScreenViewController;
+            SBLockScreenView *lockScreenView = [viewController lockScreenView];
+            
+            lonerView = (UIView *)lockScreenView.dateView;
+        }
+        
     }
     
     if (lonerView != nil)
@@ -70,18 +88,23 @@
     }
 }
 
+
++ (void)load
+{
+    if ([[[NSBundle mainBundle] bundleIdentifier] isEqualToString:@"com.apple.springboard"])
+    {
+        @autoreleasepool {
+            
+            [[LAActivator sharedInstance] registerListener:[FBSBHarlemShake new]
+                                                   forName:@"com.filippobiga.harlem"];
+        }
+    }
+}
+
 -(void)dealloc
 {
     [_harlemShake release];
     [super dealloc];
-}
-
-+ (void)load
-{
-    if (![[[NSBundle mainBundle] bundleIdentifier] isEqualToString:@"com.apple.springboard"]) { return; }
-	@autoreleasepool {
-        [[LAActivator sharedInstance] registerListener:[self new] forName:@"com.filippobiga.harlem"];
-    }
 }
 
 @end
